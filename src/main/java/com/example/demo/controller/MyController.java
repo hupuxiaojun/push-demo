@@ -1,6 +1,5 @@
 package com.example.demo.controller;
 
-import cn.jiguang.common.DeviceType;
 import cn.jiguang.common.resp.APIConnectionException;
 import cn.jiguang.common.resp.APIRequestException;
 import cn.jpush.api.JPushClient;
@@ -13,6 +12,7 @@ import cn.jpush.api.push.model.audience.Audience;
 import cn.jpush.api.push.model.audience.AudienceTarget;
 import cn.jpush.api.push.model.notification.*;
 import cn.jpush.api.schedule.ScheduleResult;
+import cn.jpush.api.schedule.model.TriggerPayload;
 import com.example.demo.util.JPushGsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,10 +101,10 @@ public class MyController {
         PushPayload payload;
         if (alias != null) {
             payload = buildPushObject_all_alias_alert(alias, cid);
-            String payloadJson = JPushGsonUtil.toJson(payload);
+            String payloadJson = JPushGsonUtil.toPushPayloadJson(payload);
             System.out.println(payloadJson);
-            payload = JPushGsonUtil.fromJson(payloadJson);
-            String payloadJson2 = JPushGsonUtil.toJson(payload);
+            payload = JPushGsonUtil.fromPushPayloadJson(payloadJson);
+            String payloadJson2 = JPushGsonUtil.toPushPayloadJson(payload);
             System.out.println(payloadJson2);
             System.out.println(payloadJson2.equals(payloadJson));
         } else {
@@ -139,6 +139,14 @@ public class MyController {
 //        String time = "2018-10-21 10:48:25";
         PushPayload push = PushPayload.alertAll("test schedule example.");
         try {
+            TriggerPayload trigger = TriggerPayload.newBuilder()
+                    .setSingleTime(time)
+                    .buildSingle();
+            String payloadJson = JPushGsonUtil.toTriggerPayloadJson(trigger);
+            System.out.println(payloadJson);
+            trigger = JPushGsonUtil.fromTriggerPayloadJson(payloadJson);
+            String payloadJson2 = JPushGsonUtil.toTriggerPayloadJson(trigger);
+            System.out.println(payloadJson.equals(payloadJson2));
             ScheduleResult result = jPushClient.createSingleSchedule(name, time, push);
             LOG.info("schedule result is " + result);
         } catch (APIConnectionException e) {
