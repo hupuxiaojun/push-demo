@@ -11,4 +11,8 @@ public class Constants {
     public static final String MASTER_SECRET = "5b3d047bbd3639b65c64e033";
     public static final String APP_KEY = "9101f9fc0a22917b9e2035d0";
     public static final String REG_ID = "190e35f7e06bdd4e552";
+    public static final String CID_TYPE_PUSH = "push";
+    public static final String CID_TYPE_SCHEDULE = "schedule";
+
+
 }

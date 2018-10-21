@@ -1,14 +1,19 @@
 package com.example.demo.controller;
 
+import cn.jiguang.common.DeviceType;
 import cn.jiguang.common.resp.APIConnectionException;
 import cn.jiguang.common.resp.APIRequestException;
 import cn.jpush.api.JPushClient;
 import cn.jpush.api.device.TagAliasResult;
+import cn.jpush.api.push.CIDResult;
 import cn.jpush.api.push.PushResult;
 import cn.jpush.api.push.model.Platform;
 import cn.jpush.api.push.model.PushPayload;
 import cn.jpush.api.push.model.audience.Audience;
-import cn.jpush.api.push.model.notification.Notification;
+import cn.jpush.api.push.model.audience.AudienceTarget;
+import cn.jpush.api.push.model.notification.*;
+import cn.jpush.api.schedule.ScheduleResult;
+import com.example.demo.util.JPushGsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +27,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static cn.jpush.api.push.model.notification.PlatformNotification.ALERT;
+import static com.example.demo.util.Constants.CID_TYPE_PUSH;
 import static com.example.demo.util.Constants.REG_ID;
 
 /**
@@ -77,14 +83,30 @@ public class MyController {
         return "success";
     }
 
-    @RequestMapping("/test")
-    public Object test(@RequestParam(required = false, name = "alias") String alias) {
 
+    @RequestMapping("/cids")
+    public Object getCids() throws APIConnectionException, APIRequestException {
+        CIDResult cidResult = jPushClient.getCidList(10, CID_TYPE_PUSH);
+        System.out.println("RateLimitQuota:" + cidResult.getRateLimitQuota());
+        System.out.println("RateLimitRemaining:" + cidResult.getRateLimitRemaining());
+        System.out.println("RateLimitReset:" + cidResult.getRateLimitReset());
+        return cidResult;
+    }
+
+
+    @RequestMapping("/push")
+    public Object push(@RequestParam(required = false, name = "alias") String alias, @RequestParam(required = false, name = "cid") String cid) {
 
         // For push, all you need do is to build PushPayload object.
         PushPayload payload;
         if (alias != null) {
-            payload = buildPushObject_all_alias_alert(alias);
+            payload = buildPushObject_all_alias_alert(alias, cid);
+            String payloadJson = JPushGsonUtil.toJson(payload);
+            System.out.println(payloadJson);
+            payload = JPushGsonUtil.fromJson(payloadJson);
+            String payloadJson2 = JPushGsonUtil.toJson(payload);
+            System.out.println(payloadJson2);
+            System.out.println(payloadJson2.equals(payloadJson));
         } else {
             payload = buildPushObject_all_all_alert();
         }
@@ -111,15 +133,54 @@ public class MyController {
         }
     }
 
+    @RequestMapping("/schedule")
+    public Object testCreateSingleSchedule(@RequestParam(name = "time") String time) {
+        String name = "test_schedule_example";
+//        String time = "2018-10-21 10:48:25";
+        PushPayload push = PushPayload.alertAll("test schedule example.");
+        try {
+            ScheduleResult result = jPushClient.createSingleSchedule(name, time, push);
+            LOG.info("schedule result is " + result);
+        } catch (APIConnectionException e) {
+            LOG.error("Connection error. Should retry later. ", e);
+            return "error";
+        } catch (APIRequestException e) {
+            LOG.error("Error response from JPush server. Should review and fix it. ", e);
+            LOG.info("HTTP Status: " + e.getStatus());
+            LOG.info("Error Code: " + e.getErrorCode());
+            LOG.info("Error Message: " + e.getErrorMessage());
+            return "error";
+        }
+        return "success";
+    }
+
+
     public static PushPayload buildPushObject_all_all_alert() {
         return PushPayload.alertAll(ALERT);
     }
 
-    public static PushPayload buildPushObject_all_alias_alert(String alias) {
-        return PushPayload.newBuilder()
+    public static PushPayload buildPushObject_all_alias_alert(String alias, String cid) {
+        Audience audience = Audience.newBuilder()
+                .addAudienceTarget(AudienceTarget.alias(alias))
+                .addAudienceTarget(AudienceTarget.tag("22", "33"))
+                .addAudienceTarget(AudienceTarget.tag_and("44", "55"))
+                .build();
+        Notification notification = Notification.newBuilder()
+                .setAlert("alert content")
+                .addPlatformNotification(AndroidNotification.newBuilder()
+                        .setTitle("Android Title")
+                        .addExtra("extra_key", "extra_value").build())
+                .addPlatformNotification(IosNotification.newBuilder()
+                        .incrBadge(1)
+                        .addExtra("extra_key", "extra_value").build())
+                .addPlatformNotification(WinphoneNotification.newBuilder().build())
+                .build();
+        return PushPayload.newBuilder().setCid(cid)
                 .setPlatform(Platform.all())
-                .setAudience(Audience.alias(alias))
-                .setNotification(Notification.alert(ALERT))
+                .setAudience(audience)
+                .setNotification(notification)
                 .build();
     }
+
+
 }

@@ -42,10 +42,10 @@ public class JPushConfig {
     public JPushClient jPushClient() throws Exception {
         String authCode = ServiceHelper.getBasicAuthorization(APP_KEY, MASTER_SECRET);
         ClientConfig clientConfig = ClientConfig.getInstance();
-        clientConfig.setPushHostName("bjapi.jiguang.cn");
-        clientConfig.setDeviceHostName("bjapi.jiguang.cn");
-        clientConfig.setScheduleHostName("bjapi.jiguang.cn");
-        clientConfig.setReportHostName("bjapi.jiguang.cn");
+//        clientConfig.setPushHostName("https://bjapi.push.jiguang.cn");
+//        clientConfig.setDeviceHostName("https://bjapi.push.jiguang.cn");
+//        clientConfig.setScheduleHostName("https://bjapi.push.jiguang.cn");
+//        clientConfig.setReportHostName("https://bjapi.push.jiguang.cn");
         //实现了IHttpClient
         ApacheHttpClient httpClient = new ApacheHttpClient(authCode, null, clientConfig);
         httpClient.setMaxConnectionCount(3000);
